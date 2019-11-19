@@ -1,0 +1,39 @@
+class APITestCase(TestCase):
+    def setUp(self):
+        self.username = "Mr. Testman"
+        self.password = str(uuid.uuid4())
+        self.user = User.objects.create(username=self.username)
+        self.user.set_password(self.password)
+        self.user.save()
+        print("setup")
+
+    def _set_token(self):
+        login_response = self.client.post("/api/token/", data={"username":self.username, "password":self.password})
+        
+        if login_response.status_code != 200:
+            print(login_response.json())
+
+        self.assertEqual(login_response.status_code,200)
+        
+        self.refresh_token = login_response.json()["refresh"]
+        self.access_token = login_response.json()["access"]
+
+    def _create_self_api_client_with_api_auth(self):
+        self.api_client = APIClient()
+        assert self.access_token
+        self.api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.access_token}")
+        
+    def _refresh_token_and_reset_auth(self):
+        refresh_response = self.client.post("/api/refresh/", data={"refresh":self.refresh_token})
+        
+        if refresh_response.status_code != 200:
+            print(refresh_response.json())
+
+        self.assertEqual(refresh_response.status_code,200)
+
+        self.access_token = refresh_response.json()["access"]
+
+    def _verify_token(self):
+        response = self.api_client.post("/api/token/verify/", data={"token":self.access_token})
+        self.assertEqual(response.status_code, 200)
+
