@@ -1,0 +1,8 @@
+from rest_framework.views import APIView
+from rest_framework import authentication, permissions
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class AuthApiView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
